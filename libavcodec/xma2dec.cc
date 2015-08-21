@@ -204,7 +204,6 @@ typedef struct XMA2DecodeCtx {
     GetBitContext    pgb;                           ///< bitstream reader context for the packet
     int              next_packet_start;             ///< start offset of the next wma packet in the demuxer packet
     uint8_t          packet_offset;                 ///< frame offset in the packet
-    uint8_t          packet_sequence_number;        ///< current packet number
     int              num_saved_bits;                ///< saved number of bits
     int              frame_offset;                  ///< frame offset in the bit reservoir
     int              subframe_offset;               ///< subframe offset in the bit reservoir
@@ -1507,7 +1506,7 @@ static void save_bits(XMA2DecodeCtx *s, GetBitContext* gb, int len,
 }
 
 /**
- *@brief Decode a single WMA packet.
+ *@brief Decode a single XMA2 packet.
  *@param avctx codec context
  *@param data the output buffer
  *@param avpkt input packet
@@ -1521,7 +1520,8 @@ static int decode_packet(AVCodecContext *avctx, void *data,
     const uint8_t* buf = avpkt->data;
     int buf_size       = avpkt->size;
     int num_bits_prev_frame;
-    int packet_sequence_number;
+    int packet_frame_count;
+    int packet_metadata;
 
     *got_frame_ptr = 0;
 
@@ -1541,24 +1541,20 @@ static int decode_packet(AVCodecContext *avctx, void *data,
 
         /** parse packet header */
         init_get_bits(gb, buf, s->buf_bit_size);
-        packet_sequence_number = get_bits(gb, 4);
-        skip_bits(gb, 2);
+        packet_frame_count = get_bits(gb, 6);
 
         /** get number of bits that need to be added to the previous frame */
         num_bits_prev_frame = get_bits(gb, s->log2_frame_size);
         ff_dlog(avctx, "packet[%d]: nbpf %x\n", avctx->frame_number,
                 num_bits_prev_frame);
-        skip_bits(gb, 11); // Skip packet metadata / packet skip count
+        packet_metadata = get_bits(gb, 3);
+        skip_bits(gb, 8); // Skip packet skip count
 
-        /** check for packet loss */
-        if (!s->packet_loss &&
-            ((s->packet_sequence_number + 1) & 0xF) != packet_sequence_number) {
-            s->packet_loss = 1;
-            av_log(avctx, AV_LOG_ERROR,
-                   "Packet loss detected! seq %"PRIx8" vs %x\n",
-                   s->packet_sequence_number, packet_sequence_number);
+        if (packet_metadata != 1) {
+          av_log(avctx, AV_LOG_ERROR,
+                 "Packet metadata does not indicate this is a XMA2 packet!");
+          return AVERROR_INVALIDDATA;
         }
-        s->packet_sequence_number = packet_sequence_number;
 
         if (num_bits_prev_frame > 0) {
             int remaining_packet_bits = s->buf_bit_size - get_bits_count(gb);
