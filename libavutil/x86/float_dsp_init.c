@@ -134,6 +134,7 @@ av_cold void ff_float_dsp_init_x86(AVFloatDSPContext *fdsp)
         fdsp->vector_fmul_window = vector_fmul_window_sse;
     }
 #endif
+#if HAVE_YASM
     if (EXTERNAL_SSE(cpu_flags)) {
         fdsp->vector_fmul = ff_vector_fmul_sse;
         fdsp->vector_fmac_scalar = ff_vector_fmac_scalar_sse;
@@ -153,4 +154,5 @@ av_cold void ff_float_dsp_init_x86(AVFloatDSPContext *fdsp)
         fdsp->vector_fmul_add    = ff_vector_fmul_add_avx;
         fdsp->vector_fmul_reverse = ff_vector_fmul_reverse_avx;
     }
+#endif
 }

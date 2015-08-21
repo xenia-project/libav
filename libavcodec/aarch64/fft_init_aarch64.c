@@ -34,6 +34,7 @@ av_cold void ff_fft_init_aarch64(FFTContext *s)
 {
     int cpu_flags = av_get_cpu_flags();
 
+#if ARCH_AARCH64
     if (have_neon(cpu_flags)) {
         s->fft_permute  = ff_fft_permute_neon;
         s->fft_calc     = ff_fft_calc_neon;
@@ -44,4 +45,5 @@ av_cold void ff_fft_init_aarch64(FFTContext *s)
         s->mdct_permutation = FF_MDCT_PERM_INTERLEAVE;
 #endif
     }
+#endif
 }

@@ -88,8 +88,9 @@ static av_cold void avcodec_init(void)
         return;
     initialized = 1;
 
-    if (CONFIG_ME_CMP)
-        ff_me_cmp_init_static();
+#if CONFIG_ME_CMP
+    ff_me_cmp_init_static();
+#endif
 }
 
 int av_codec_is_encoder(const AVCodec *codec)

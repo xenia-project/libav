@@ -40,18 +40,24 @@ av_cold void ff_fft_init_x86(FFTContext *s)
         s->fft_calc   = ff_fft_calc_3dnowext;
     }
 #endif
-    if (EXTERNAL_SSE(cpu_flags)) {
+#if HAVE_YASM && HAVE_SSE
+    if EXTERNAL_SSE(cpu_flags) {
         /* SSE for P3/P4/K8 */
-        s->imdct_calc  = ff_imdct_calc_sse;
-        s->imdct_half  = ff_imdct_half_sse;
+        s->imdct_calc = ff_imdct_calc_sse;
+        s->imdct_half = ff_imdct_half_sse;
         s->fft_permute = ff_fft_permute_sse;
-        s->fft_calc    = ff_fft_calc_sse;
+        s->fft_calc = ff_fft_calc_sse;
         s->fft_permutation = FF_FFT_PERM_SWAP_LSBS;
     }
-    if (EXTERNAL_AVX_FAST(cpu_flags) && s->nbits >= 5) {
-        /* AVX for SB */
-        s->imdct_half      = ff_imdct_half_avx;
-        s->fft_calc        = ff_fft_calc_avx;
-        s->fft_permutation = FF_FFT_PERM_AVX;
+#endif
+#if HAVE_YASM && HAVE_AVX
+    if EXTERNAL_AVX_FAST(cpu_flags) {
+        if (s->nbits >= 5) {
+            /* AVX for SB */
+            s->imdct_half      = ff_imdct_half_avx;
+            s->fft_calc        = ff_fft_calc_avx;
+            s->fft_permutation = FF_FFT_PERM_AVX;
+        }
     }
+#endif
 }

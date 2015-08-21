@@ -40,6 +40,7 @@ av_cold void ff_fft_init_arm(FFTContext *s)
 {
     int cpu_flags = av_get_cpu_flags();
 
+#if ARCH_ARM
     if (have_vfp(cpu_flags) && !have_vfpv3(cpu_flags)) {
         s->fft_calc     = ff_fft_calc_vfp;
 #if CONFIG_MDCT
@@ -57,6 +58,7 @@ av_cold void ff_fft_init_arm(FFTContext *s)
         s->mdct_permutation = FF_MDCT_PERM_INTERLEAVE;
 #endif
     }
+#endif
 }
 
 #if CONFIG_RDFT

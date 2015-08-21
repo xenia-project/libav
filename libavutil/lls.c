@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "attributes.h"
+#include "config.h"
 #include "version.h"
 #include "lls.h"
 
