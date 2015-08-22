@@ -18,6 +18,8 @@
  *
  * @returns num bits read
  */
-int xma2_decode_frame(AVCodecContext* avctx, AVPacket* packet, AVFrame* frame, int* got_frame_ptr, int* block_last_frame_ptr, size_t bit_offset);
+int xma2_decode_frame(AVCodecContext* avctx, AVPacket* packet, AVFrame* frame, int* got_frame_ptr, int* block_last_frame_ptr, int* frame_size, size_t bit_offset);
+
+//int xma2_frame_length(uint8_t* block, int size, size_t frame_bit_offset);
 
 #endif // AVCODEC_XMA2DEC_H
