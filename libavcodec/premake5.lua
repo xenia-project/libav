@@ -51,7 +51,7 @@ project("libavcodec")
 	"wma_common.*",
 	"wma_freqs.*",
 	"xiph.c",
-	"xma2dec.cc",
+	"xma2dec.c",
 	libav_root .. "include/libavcodec/xma2dec.h",
   })
   defines({
