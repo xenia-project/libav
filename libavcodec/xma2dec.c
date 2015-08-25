@@ -145,8 +145,8 @@ typedef struct XMA2ChannelCtx {
   uint8_t num_subframes;
   uint16_t subframe_len[MAX_SUBFRAMES];     ///< subframe length in samples
   uint16_t subframe_offset[MAX_SUBFRAMES];  ///< subframe positions in the
-                                            ///current frame
-  uint8_t cur_subframe;                     ///< current subframe number
+                                            /// current frame
+  uint8_t cur_subframe;      ///< current subframe number
   uint16_t decoded_samples;  ///< number of already processed samples
   uint8_t grouped;           ///< channel is part of a group
   int quant_step;            ///< quantization step for the current subframe
@@ -154,7 +154,7 @@ typedef struct XMA2ChannelCtx {
   int8_t scale_factor_step;  ///< scaling step for the current subframe
   int max_scale_factor;      ///< maximum scale factor for the current subframe
   int saved_scale_factors[2][MAX_BANDS];  ///< resampled and (previously)
-                                          ///transmitted scale factor values
+                                          /// transmitted scale factor values
   int8_t scale_factor_idx;  ///< index for the transmitted scale factor values
                             ///(used for resampling)
   int* scale_factors;  ///< pointer to the scale factor values used for decoding
@@ -173,7 +173,7 @@ typedef struct XMA2ChannelGrp {
   uint8_t num_channels;              ///< number of channels in the group
   int8_t transform;                  ///< transform on / off
   int8_t transform_band[MAX_BANDS];  ///< controls if the transform is enabled
-                                     ///for a certain band
+                                     /// for a certain band
   float decorrelation_matrix[WMAPRO_MAX_CHANNELS * WMAPRO_MAX_CHANNELS];
   float* channel_data[WMAPRO_MAX_CHANNELS];  ///< transformation coefficients
 } XMA2ChannelGrp;
@@ -198,21 +198,21 @@ typedef struct XMA2DecodeCtx {
   uint32_t decode_flags;              ///< used compression features
   uint8_t len_prefix;                 ///< frame is prefixed with its length
   uint8_t dynamic_range_compression;  ///< frame contains DRC data
-  uint8_t bits_per_sample;     ///< integer audio sample size for the unscaled
-                               ///IMDCT output (used to scale to [-1.0, 1.0])
+  uint8_t bits_per_sample;  ///< integer audio sample size for the unscaled
+  /// IMDCT output (used to scale to [-1.0, 1.0])
   uint16_t samples_per_frame;  ///< number of samples to output
   uint16_t log2_frame_size;
   int8_t lfe_channel;  ///< lfe channel index
   uint8_t max_num_subframes;
   uint8_t subframe_len_bits;  ///< number of bits used for the subframe length
   uint8_t max_subframe_len_bit;  ///< flag indicating that the subframe is of
-                                 ///maximum size when the first subframe length
-                                 ///bit is 1
+  /// maximum size when the first subframe length
+  /// bit is 1
   uint16_t min_samples_per_subframe;
   int8_t num_sfb[WMAPRO_BLOCK_SIZES];  ///< scale factor bands per block size
   int16_t sfb_offsets[WMAPRO_BLOCK_SIZES][MAX_BANDS];  ///< scale factor band
-                                                       ///offsets (multiples of
-                                                       ///4)
+  /// offsets (multiples of
+  /// 4)
   int8_t sf_offsets[WMAPRO_BLOCK_SIZES][WMAPRO_BLOCK_SIZES]
                    [MAX_BANDS];  ///< scale factor resample matrix
   int16_t subwoofer_cutoffs[WMAPRO_BLOCK_SIZES];  ///< subwoofer cutoff values
@@ -220,7 +220,7 @@ typedef struct XMA2DecodeCtx {
   /* packet decode state */
   GetBitContext pgb;      ///< bitstream reader context for the packet
   int next_packet_start;  ///< start offset of the next wma packet in the
-                          ///demuxer packet
+  /// demuxer packet
   uint8_t packet_offset;  ///< frame offset in the packet
   int num_saved_bits;     ///< saved number of bits
   int frame_offset;       ///< frame offset in the bit reservoir
@@ -239,15 +239,15 @@ typedef struct XMA2DecodeCtx {
   /* subframe/block decode state */
   int16_t subframe_len;              ///< current subframe length
   int8_t channels_for_cur_subframe;  ///< number of channels that contain the
-                                     ///subframe
+  /// subframe
   int8_t channel_indexes_for_cur_subframe[WMAPRO_MAX_CHANNELS];
   int8_t num_bands;                ///< number of scale factor bands
   int8_t transmit_num_vec_coeffs;  ///< number of vector coded coefficients is
-                                   ///part of the bitstream
-  int16_t* cur_sfb_offsets;        ///< sfb offsets for the current block
+  /// part of the bitstream
+  int16_t* cur_sfb_offsets;  ///< sfb offsets for the current block
   uint8_t table_idx;  ///< index for the num_sfb, sfb_offsets, sf_offsets and
-                      ///subwoofer_cutoffs tables
-  int8_t esc_len;     ///< length of escaped coefficients
+  /// subwoofer_cutoffs tables
+  int8_t esc_len;  ///< length of escaped coefficients
 
   uint8_t num_chgroups;                         ///< number of channel groups
   XMA2ChannelGrp chgroup[WMAPRO_MAX_CHANNELS];  ///< channel group information
@@ -1391,13 +1391,14 @@ static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
   }
 
   if (s->len_prefix) {
-    if (len != (get_bits_count(gb) - s->frame_offset) + 2) {
+    if (len > (get_bits_count(gb) - s->frame_offset) + 2) {
       /** FIXME: not sure if this is always an error */
-      av_log(s->avctx, AV_LOG_ERROR,
+      av_log(s->avctx, AV_LOG_WARNING,
              "frame[%" PRIu32 "] would have to skip %i bits\n", s->frame_num,
              len - (get_bits_count(gb) - s->frame_offset) - 1);
-      s->packet_loss = 1;
-      return 0;
+
+      //s->packet_loss = 1;
+      //return 0;
     }
 
     /** skip the rest of the frame data */
@@ -1527,9 +1528,9 @@ static int decode_packet(AVCodecContext* avctx, void* data, int* got_frame_ptr,
     packet_metadata = get_bits(gb, 3);
     skip_bits(gb, 8);  // Skip packet skip count
 
-    if (packet_metadata != 1) {
+    if (packet_metadata != 0 && packet_metadata != 1) {
       av_log(avctx, AV_LOG_ERROR,
-             "Packet metadata does not indicate this is a XMA2 packet!");
+             "Packet metadata does not indicate this is a XMA/XMA2 packet!");
       return AVERROR_INVALIDDATA;
     }
 
@@ -1667,7 +1668,6 @@ static int get_frame_start_offset(uint8_t* block, int len, size_t bit_offset) {
     while (1) {
       /** Loop until we hit the target range. */
       next_frame_offset = get_bits(gb, 15);
-
     }
   }
 }
@@ -1677,23 +1677,25 @@ static int valid_frame_offset(void* packet, int len, size_t bit_offset) {
   GetBitContext* gb = &gbc;
 
   init_get_bits(gb, packet, len << 3);
-  skip_bits(gb, 6);
+  int packet_num_frames = get_bits(gb, 6);
   int first_frame_offset = get_bits(gb, 15);
   int packet_metadata = get_bits(gb, 3);
-  int packet_skip_count = get_bits(gb, 8);
+  skip_bits(gb, 8);
 
-  if (packet_metadata != 1 || packet_skip_count != 0) {
+  if (packet_metadata != 0 && packet_metadata != 1) {
+    /** Not a XMA/XMA2 packet? */
     return 0;
   }
 
   skip_bits(gb, first_frame_offset);
 
   int next_frame_offset = get_bits_count(gb);
-  while (get_bits_count(gb) < len << 3) {
+  while (get_bits_count(gb) < (len << 3)) {
     if (get_bits_count(gb) == bit_offset) {
       return 1;
     }
 
+    /** FIXME: This can be split by a packet header. */
     next_frame_offset = get_bits(gb, 15);
     skip_bits(gb, next_frame_offset - 15);
   }
@@ -1704,22 +1706,36 @@ static int valid_frame_offset(void* packet, int len, size_t bit_offset) {
 /**
  * Gets frame length (even if header is split across a packet)
  */
-static int get_frame_length(uint8_t* block, int size, size_t frame_bit_offset) {
+static int get_frame_length(uint8_t* block, int size,
+                            size_t frame_bit_offset) {
+  int frame_byte_offset = frame_bit_offset >> 3;
   int packet_bit_offset = frame_bit_offset % (2048 << 3);
   int packet_remaining_bits = (2048 << 3) - packet_bit_offset;
+  int packet_number = frame_byte_offset / 2048;
+  int num_packets = size / 2048;
+  short buf = 0;
   GetBitContext gbc;
   GetBitContext* gb = &gbc;
-  short buf = 0;
 
   init_get_bits(gb, block, size << 3);
   skip_bits(gb, frame_bit_offset);
 
-  if (packet_remaining_bits > 15) {
+  if (packet_remaining_bits >= 15) {
     return get_bits(gb, 15);
   } else {
-    // Split on packet bounds.
+    if (packet_number == num_packets - 1) {
+      /** Can't get full header! */
+      return -1;
+    }
+
     buf = get_bits(gb, packet_remaining_bits) << (15 - packet_remaining_bits);
-    skip_bits(gb, 32);
+
+    /** Begins on next packet. */
+    skip_bits(gb, 6);
+    int first_frame_offset = get_bits(gb, 15);
+    int packet_metadata = get_bits(gb, 3);
+    skip_bits(gb, 8);
+
     buf |= get_bits(gb, 15 - packet_remaining_bits);
 
     return buf;
@@ -1727,7 +1743,7 @@ static int get_frame_length(uint8_t* block, int size, size_t frame_bit_offset) {
 }
 
 /**
- * Collects a frame into the context's buffer. UNTESTED!
+ * Collects a frame into the context's buffer.
  */
 static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
                          size_t frame_bit_offset, int* frame_size_bits) {
@@ -1737,7 +1753,9 @@ static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
   int collected_size_bits = 0;
   int packet_bit_offset = frame_bit_offset % (2048 << 3);
   int packet_remaining_bits = (2048 << 3) - packet_bit_offset;
+  int first_packet_remaining_bits = packet_remaining_bits;
   int packet_number = frame_byte_offset / 2048;
+  int num_packets = size / 2048;
   GetBitContext gbc;
   GetBitContext* gb = &gbc;
 
@@ -1759,9 +1777,19 @@ static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
 
     *frame_size_bits += 32;
     packet_number++;
+    if (packet_number >= num_packets) {
+      /** Not good! */
+      return 0;
+    }
+
     init_get_bits(gb, block + (packet_number * 2048), 2048 << 3);
     skip_bits(gb, 6);
-    frame_remaining_bits = get_bits(gb, 15);
+    if (show_bits(gb, 15) != 0x7FFF) {
+      frame_remaining_bits = get_bits(gb, 15);
+    } else {
+      collected_size_bits = collected_size_bits;
+    }
+
     packet_remaining_bits = 2048 * 8;
     skip_bits(gb, 11);
 
@@ -1774,8 +1802,8 @@ static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
 }
 
 int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
-                      int* got_frame_ptr, int* block_last_frame_ptr, int* frame_size,
-                      size_t bit_offset) {
+                      int* got_frame_ptr, int* invalid_frame_ptr,
+                      int* frame_size, int packet_header, size_t bit_offset) {
   XMA2DecodeCtx* s = (XMA2DecodeCtx*)avctx->priv_data;
   GetBitContext* gb = &s->pgb;
   const uint8_t* buf = avpkt->data;
@@ -1783,38 +1811,60 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
   int frame_byte_offset = bit_offset >> 3;
   int packet_bit_offset = bit_offset % (2048 << 3);
   int packet_metadata;
+  int packet_first_frame_offset;
   int packet_number = frame_byte_offset / 2048;
   const uint8_t* packet = buf + (packet_number * 2048);
 
   s->buf_bit_size = buf_size << 3;
-  *block_last_frame_ptr = 0;
+  *invalid_frame_ptr = 0;
   *got_frame_ptr = 0;
 
-  init_get_bits(gb, buf + (packet_number * 2048), 2048 << 3);
-  skip_bits(gb, 21);
-  packet_metadata = get_bits(gb, 3);
-  skip_bits(gb, 8);
-  skip_bits(gb, packet_bit_offset - 32);
+  if (packet_header) {
+    init_get_bits(gb, buf + (packet_number * 2048), 2048 << 3);
+    skip_bits(gb, 6);
+    packet_first_frame_offset = get_bits(gb, 15);
+    packet_metadata = get_bits(gb, 3);
+    skip_bits(gb, 8);
 
-  if (!valid_frame_offset(packet, 2048, packet_bit_offset)) {
-    /** Not a valid offset. */
-    return AVERROR_INVALIDDATA;
+    if (packet_metadata != 1 && packet_metadata != 0) {
+      /** Not a XMA/XMA2 packet? */
+      av_log(avctx, AV_LOG_ERROR, "Unrecognized packet metadata: %d\n",
+             packet_metadata);
+      return AVERROR_INVALIDDATA;
+    }
+
+    if (packet_first_frame_offset == 0x7FFF) {
+      /** Packet only exists to hold a partial frame, so no frame can start
+       * here.
+       */
+      *frame_size = -1;
+      *invalid_frame_ptr = 1;
+      return 0;
+    }
+
+    skip_bits(gb, packet_bit_offset - 32);
+
+#ifdef DEBUG
+    if (!valid_frame_offset(packet, 2048, packet_bit_offset)) {
+      /** Not a valid offset. */
+      av_log(avctx, AV_LOG_ERROR, "Invalid frame offset: %d\n", bit_offset);
+      return AVERROR_INVALIDDATA;
+    }
+#endif
   }
 
-  if (packet_metadata != 1) {
-    /** Not a XMA2 packet? */
-    return AVERROR_INVALIDDATA;
-  }
-
-  /** check if this is the last frame in the block */
   *frame_size = get_frame_length(buf, buf_size, bit_offset);
   if (*frame_size == 0x7FFF) {
+    /** invalid frame (end of a packet/etc) */
     *frame_size = -1;
-    *block_last_frame_ptr = 1;
+    *invalid_frame_ptr = 1;
     return 0;
   }
 
-  if (!collect_frame(s, buf, buf_size, bit_offset, frame_size)) {
+  int res = collect_frame(s, buf, buf_size, bit_offset,
+                          frame_size);
+  if (!res) {
+    av_log(avctx, AV_LOG_ERROR, "Could not collect frame!\n");
     return AVERROR_INVALIDDATA;
   }
 
@@ -1826,6 +1876,79 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
   }
 
   return *frame_size;
+}
+
+int xma2_finish_partial(AVCodecContext* avctx, AVPacket* avpkt,
+                        int remaining_bits, size_t bit_offset) {
+  XMA2DecodeCtx* s = (XMA2DecodeCtx*)avctx->priv_data;
+  GetBitContext* gb = &s->pgb;
+  const uint8_t* buf = avpkt->data;
+  int buf_size = avpkt->size;
+  int frame_byte_offset = bit_offset >> 3;
+  int packet_bit_offset = bit_offset % (2048 << 3);
+  int packet_metadata;
+  int packet_first_frame_offset;
+  int packet_number = frame_byte_offset / 2048;
+  const uint8_t* packet = buf + (packet_number * 2048);
+
+  s->buf_bit_size = buf_size << 3;
+
+  init_get_bits(gb, buf + (packet_number * 2048), 2048 << 3);
+  skip_bits(gb, 6);
+  packet_first_frame_offset = get_bits(gb, 15);
+  packet_metadata = get_bits(gb, 3);
+  skip_bits(gb, 8);
+
+
+
+  return 0;
+}
+
+size_t xma2_correct_frame_offset(uint8_t* block, size_t size,
+                                 size_t frame_bit_offset) {
+  int frame_byte_offset = frame_bit_offset >> 3;
+  int packet_bit_offset = frame_bit_offset % (2048 << 3);
+  int packet_remaining_bits = (2048 << 3) - packet_bit_offset;
+  int packet_number = frame_byte_offset / 2048;
+  int num_packets = size / 2048;
+  GetBitContext gbc;
+  GetBitContext* gb = &gbc;
+
+  if (packet_remaining_bits < 15) {
+    /** Not enough room for frame header. Might begin on next packet.
+     * If the next packet's first frame offset == 0, frame begins on next packet.
+     * Otherwise, the length header is split across the packet boundaries.
+     */
+
+    if (packet_number == num_packets - 1) {
+      /** Uh oh! This is the last packet! */
+      av_log(NULL, AV_LOG_ERROR, "Frame header is split at end of stream!\n");
+      return 0;
+    }
+
+    init_get_bits(gb, block, size << 3);
+    skip_bits(gb, frame_bit_offset + packet_remaining_bits);
+    skip_bits(gb, 6);
+    int first_frame_offset = get_bits(gb, 15);
+    int packet_metadata = get_bits(gb, 3);
+    skip_bits(gb, 8);
+
+    if (first_frame_offset != 0) {
+      /** Does not begin on the next packet. */
+      return frame_bit_offset;
+    }
+
+    return get_bits_count(gb);
+  } else if (packet_bit_offset < 32) {
+    if (packet_bit_offset != 0) {
+      av_log(NULL, AV_LOG_WARNING, "Packet bit offset is inside the header!\n");
+    }
+
+    /** Inside the packet header. */
+    frame_bit_offset += 32 - packet_bit_offset;
+  }
+
+  return frame_bit_offset;
 }
 
 int xma2_frame_length(uint8_t* block, int size, size_t frame_bit_offset) {

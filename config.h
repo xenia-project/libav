@@ -9,6 +9,12 @@
 #define EXTERN_PREFIX "_"
 #define EXTERN_ASM _
 #define SLIBSUF ".dll"
+
+/* Added definitions: */
+#define HAVE_INTRINSICS_AVX 1
+#define HAVE_INTRINSICS_SSE 1
+
+/* Generated definitions: */
 #define ARCH_AARCH64 0
 #define ARCH_ALPHA 0
 #define ARCH_ARM 0
@@ -112,18 +118,18 @@
 #define HAVE_VSX_INLINE 0
 #define HAVE_AMD3DNOW_INLINE 0
 #define HAVE_AMD3DNOWEXT_INLINE 0
-#define HAVE_AVX_INLINE 0
+#define HAVE_AVX_INLINE 1
 #define HAVE_AVX2_INLINE 0
 #define HAVE_FMA3_INLINE 0
 #define HAVE_FMA4_INLINE 0
 #define HAVE_MMX_INLINE 0
 #define HAVE_MMXEXT_INLINE 0
-#define HAVE_SSE_INLINE 0
-#define HAVE_SSE2_INLINE 0
-#define HAVE_SSE3_INLINE 0
-#define HAVE_SSE4_INLINE 0
-#define HAVE_SSE42_INLINE 0
-#define HAVE_SSSE3_INLINE 0
+#define HAVE_SSE_INLINE 1
+#define HAVE_SSE2_INLINE 1
+#define HAVE_SSE3_INLINE 1
+#define HAVE_SSE4_INLINE 1
+#define HAVE_SSE42_INLINE 1
+#define HAVE_SSSE3_INLINE 1
 #define HAVE_XOP_INLINE 0
 #define HAVE_CPUNOP_INLINE 0
 #define HAVE_I686_INLINE 0

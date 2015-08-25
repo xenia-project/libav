@@ -24,6 +24,10 @@
 #include "cpu.h"
 #include "asm.h"
 
+#if HAVE_INTRINSICS_SSE
+#include <immintrin.h>
+#endif
+
 void ff_vector_fmul_sse(float *dst, const float *src0, const float *src1,
                         int len);
 void ff_vector_fmul_avx(float *dst, const float *src0, const float *src1,
@@ -122,6 +126,23 @@ static void vector_fmul_window_sse(float *dst, const float *src0,
 }
 #endif /* HAVE_6REGS && HAVE_INLINE_ASM */
 
+#if HAVE_INTRINSICS_SSE
+static void vector_fmul_scalar_sse(float *dst, const float *src, float mul,
+                                   int len) {
+  // for (int i = 0; i < len; i++) dst[i] = src[i] * mul;
+
+  __m128 a, m;
+  m = _mm_broadcast_ss(&mul);
+
+  /** SSE version */
+  for (int i = 0; i < len; i += 4) {
+    a = _mm_load_ps(&src[i]);
+    a = _mm_mul_ps(a, m);
+    _mm_store_ps(&dst[i], a);
+  }
+}
+#endif
+
 av_cold void ff_float_dsp_init_x86(AVFloatDSPContext *fdsp)
 {
     int cpu_flags = av_get_cpu_flags();
@@ -154,5 +175,8 @@ av_cold void ff_float_dsp_init_x86(AVFloatDSPContext *fdsp)
         fdsp->vector_fmul_add    = ff_vector_fmul_add_avx;
         fdsp->vector_fmul_reverse = ff_vector_fmul_reverse_avx;
     }
+#endif
+#if HAVE_INTRINSICS_SSE
+    fdsp->vector_fmul_scalar = vector_fmul_scalar_sse;
 #endif
 }
