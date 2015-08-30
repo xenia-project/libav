@@ -103,7 +103,7 @@
 #include "sinewin.h"
 #include "wma.h"
 #include "wma_common.h"
-#include "..\include\libavcodec\xma2dec.h"
+#include "xma2dec.h"
 
 /** current decoder limitations */
 #define WMAPRO_MAX_CHANNELS 8  ///< max number of handled channels

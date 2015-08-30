@@ -19,8 +19,6 @@
 #include "config.h"
 #include "avutil.h"
 
-#include "avversion.h"
-
 /**
  * @file
  * various utility functions
@@ -28,7 +26,7 @@
 
 const char *av_version_info(void)
 {
-    return LIBAV_VERSION;
+    return "xenia-project/libav-fork";
 }
 
 unsigned avutil_version(void)

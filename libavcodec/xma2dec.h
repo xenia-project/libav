@@ -3,7 +3,7 @@
 #ifndef AVCODEC_XMA2DEC_H
 #define AVCODEC_XMA2DEC_H
 
-#include "libavcodec/avcodec.h"
+#include "avcodec.h"
 
 /**
  * @brief Decode a single frame.
