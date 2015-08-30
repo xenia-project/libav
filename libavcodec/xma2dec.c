@@ -1292,7 +1292,8 @@ static int decode_subframe(XMA2DecodeCtx* s) {
 /**
  *@brief Decode one WMA frame.
  *@param s codec context
- *@return 0 if the trailer bit indicates that this is the last frame,
+ *@return -1 if an error occurred
+ *        0 if the trailer bit indicates that this is the last frame,
  *        1 if there are additional frames
  */
 static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
@@ -1310,7 +1311,7 @@ static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
   /** decode tile information */
   if (decode_tilehdr(s)) {
     s->packet_loss = 1;
-    return 0;
+    return -1;
   }
 
   /** read postproc transform */
@@ -1359,7 +1360,7 @@ static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
   while (!s->parsed_all_subframes) {
     if (decode_subframe(s) < 0) {
       s->packet_loss = 1;
-      return 0;
+      return -1;
     }
   }
 
@@ -1368,7 +1369,7 @@ static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
   if ((ret = ff_get_buffer(avctx, frame, 0)) < 0) {
     av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
     s->packet_loss = 1;
-    return 0;
+    return -1;
   }
 
   /** copy samples to the output buffer */
@@ -1398,7 +1399,7 @@ static int decode_frame(XMA2DecodeCtx* s, AVFrame* frame, int* got_frame_ptr) {
              len - (get_bits_count(gb) - s->frame_offset) - 1);
 
       //s->packet_loss = 1;
-      //return 0;
+      //return -1;
     }
 
     /** skip the rest of the frame data */
@@ -1819,6 +1820,7 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
   *invalid_frame_ptr = 0;
   *got_frame_ptr = 0;
 
+  /** The user can choose to submit a buffer without a packet header. */
   if (packet_header) {
     init_get_bits(gb, buf + (packet_number * 2048), 2048 << 3);
     skip_bits(gb, 6);
@@ -1870,115 +1872,16 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
 
   s->packet_done = 0;
   s->packet_loss = 0;
-  if (!decode_frame(s, frame, got_frame_ptr) && s->packet_loss) {
+  res = decode_frame(s, frame, got_frame_ptr);
+  if (res < 0 || s->packet_loss) {
     /** Something bad happened. */
     return AVERROR_INVALIDDATA;
-  }
-
-  return *frame_size;
-}
-
-int xma2_finish_partial(AVCodecContext* avctx, AVPacket* avpkt,
-                        int remaining_bits, size_t bit_offset) {
-  XMA2DecodeCtx* s = (XMA2DecodeCtx*)avctx->priv_data;
-  GetBitContext* gb = &s->pgb;
-  const uint8_t* buf = avpkt->data;
-  int buf_size = avpkt->size;
-  int frame_byte_offset = bit_offset >> 3;
-  int packet_bit_offset = bit_offset % (2048 << 3);
-  int packet_metadata;
-  int packet_first_frame_offset;
-  int packet_number = frame_byte_offset / 2048;
-  const uint8_t* packet = buf + (packet_number * 2048);
-
-  s->buf_bit_size = buf_size << 3;
-
-  init_get_bits(gb, buf + (packet_number * 2048), 2048 << 3);
-  skip_bits(gb, 6);
-  packet_first_frame_offset = get_bits(gb, 15);
-  packet_metadata = get_bits(gb, 3);
-  skip_bits(gb, 8);
-
-
-
-  return 0;
-}
-
-size_t xma2_correct_frame_offset(uint8_t* block, size_t size,
-                                 size_t frame_bit_offset) {
-  int frame_byte_offset = frame_bit_offset >> 3;
-  int packet_bit_offset = frame_bit_offset % (2048 << 3);
-  int packet_remaining_bits = (2048 << 3) - packet_bit_offset;
-  int packet_number = frame_byte_offset / 2048;
-  int num_packets = size / 2048;
-  GetBitContext gbc;
-  GetBitContext* gb = &gbc;
-
-  if (packet_remaining_bits < 15) {
-    /** Not enough room for frame header. Might begin on next packet.
-     * If the next packet's first frame offset == 0, frame begins on next packet.
-     * Otherwise, the length header is split across the packet boundaries.
-     */
-
-    if (packet_number == num_packets - 1) {
-      /** Uh oh! This is the last packet! */
-      av_log(NULL, AV_LOG_ERROR, "Frame header is split at end of stream!\n");
-      return 0;
-    }
-
-    init_get_bits(gb, block, size << 3);
-    skip_bits(gb, frame_bit_offset + packet_remaining_bits);
-    skip_bits(gb, 6);
-    int first_frame_offset = get_bits(gb, 15);
-    int packet_metadata = get_bits(gb, 3);
-    skip_bits(gb, 8);
-
-    if (first_frame_offset != 0) {
-      /** Does not begin on the next packet. */
-      return frame_bit_offset;
-    }
-
-    return get_bits_count(gb);
-  } else if (packet_bit_offset < 32) {
-    if (packet_bit_offset != 0) {
-      av_log(NULL, AV_LOG_WARNING, "Packet bit offset is inside the header!\n");
-    }
-
-    /** Inside the packet header. */
-    frame_bit_offset += 32 - packet_bit_offset;
-  }
-
-  return frame_bit_offset;
-}
-
-int xma2_frame_length(uint8_t* block, int size, size_t frame_bit_offset) {
-  int frame_byte_offset = frame_bit_offset >> 3;
-  int packet_bit_offset = frame_bit_offset % (2048 << 3);
-  int packet_remaining_bits = (2048 << 3) - packet_bit_offset;
-  int packet_number = frame_byte_offset / 2048;
-  uint8_t* packet = block + (packet_number * 2048);
-  GetBitContext gbc;
-  GetBitContext* gb = &gbc;
-
-  if (!valid_frame_offset(packet, 2048, packet_bit_offset)) {
-    /** Not a valid frame offset. */
-    return -1;
-  }
-
-  init_get_bits(gb, block, size);
-  skip_bits(gb, frame_bit_offset);
-  int frame_size_bits = get_bits(gb, 15);
-  if (frame_size_bits == 0x7FFF) {
-    /** Last frame in the block. */
+  } else if (res == 0) {
+    /** No more frames. */
     return 0;
   }
 
-  /** Compensate for packet header. */
-  if (packet_remaining_bits < frame_size_bits) {
-    frame_size_bits += 32;
-  }
-
-  return frame_size_bits;
+  return *frame_size;
 }
 
 /**

@@ -26,10 +26,4 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* packet, AVFrame* frame,
                       int* got_frame_ptr, int* invalid_frame_ptr,
                       int* frame_size, int packet_header, size_t bit_offset);
 
-/**
- * @brief Fixes up a frame offset, if any fixup needed.
- */
-size_t xma2_correct_frame_offset(uint8_t* block, size_t len,
-                                 size_t frame_bit_offset);
-
 #endif  /* AVCODEC_XMA2DEC_H */
