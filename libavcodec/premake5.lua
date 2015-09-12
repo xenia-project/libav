@@ -48,7 +48,7 @@ project("libavcodec")
     "wma_common.*",
     "wma_freqs.*",
     "xma2dec.c",
-    libav_root.."include/libavcodec/xma2dec.h",
+    "xma2dec.h",
   })
   defines({
     "_USE_MATH_DEFINES", -- For M_PI/etc
