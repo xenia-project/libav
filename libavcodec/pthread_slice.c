@@ -37,6 +37,7 @@
 
 #include "libavutil/common.h"
 #include "libavutil/cpu.h"
+#include "libavutil/internal.h"
 #include "libavutil/mem.h"
 
 typedef int (action_func)(AVCodecContext *c, void *arg);

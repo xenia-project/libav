@@ -1763,9 +1763,9 @@ static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
   init_get_bits(gb, block, size << 3);
   skip_bits(gb, frame_bit_offset);
 
-  save_bits(s, gb, min(packet_remaining_bits, frame_remaining_bits), 0);
-  collected_size_bits += min(packet_remaining_bits, frame_remaining_bits);
-  frame_remaining_bits -= min(packet_remaining_bits, frame_remaining_bits);
+  save_bits(s, gb, FFMIN(packet_remaining_bits, frame_remaining_bits), 0);
+  collected_size_bits += FFMIN(packet_remaining_bits, frame_remaining_bits);
+  frame_remaining_bits -= FFMIN(packet_remaining_bits, frame_remaining_bits);
   while (1) {
     if (frame_remaining_bits <= 0) {
       if (collected_size_bits != frame_actual_size_bits) {
@@ -1794,9 +1794,9 @@ static int collect_frame(XMA2DecodeCtx* s, uint8_t* block, int size,
     packet_remaining_bits = 2048 * 8;
     skip_bits(gb, 11);
 
-    save_bits(s, gb, min(packet_remaining_bits, frame_remaining_bits), 1);
-    collected_size_bits += min(packet_remaining_bits, frame_remaining_bits);
-    frame_remaining_bits -= min(packet_remaining_bits, frame_remaining_bits);
+    save_bits(s, gb, FFMIN(packet_remaining_bits, frame_remaining_bits), 1);
+    collected_size_bits += FFMIN(packet_remaining_bits, frame_remaining_bits);
+    frame_remaining_bits -= FFMIN(packet_remaining_bits, frame_remaining_bits);
   }
 
   return 0;
@@ -1849,7 +1849,7 @@ int xma2_decode_frame(AVCodecContext* avctx, AVPacket* avpkt, AVFrame* frame,
 #ifdef DEBUG
     if (!valid_frame_offset(packet, 2048, packet_bit_offset)) {
       /** Not a valid offset. */
-      av_log(avctx, AV_LOG_ERROR, "Invalid frame offset: %d\n", bit_offset);
+      av_log(avctx, AV_LOG_ERROR, "Invalid frame offset: %zu\n", bit_offset);
       return AVERROR_INVALIDDATA;
     }
 #endif
