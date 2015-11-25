@@ -7,11 +7,12 @@ project("libavutil")
   kind("StaticLib")
   language("C")
   includedirs({
-  libav_root,
+    libav_root,
   })
-  local_platform_files()
   files({
     "**/cpu.*",
+    "*.c",
+    "*.h",
     "x86/*.c",
     "x86/*.h",
   })
