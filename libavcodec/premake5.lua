@@ -1,13 +1,11 @@
 local libav_root = "../"
 project("libavcodec")
   uuid("9DB2830C-D326-48ED-B4CC-08EA6A1B7272")
-  --local_platform_files()
   files({
     "**/fdct.*",
     "**/fdctdsp_init*.c",
     "**/fft.h",
     "**/fft_init*.c",
-    --"allcodecs.c",
     "avfft.h",
     "avpacket.c",
     "bitstream.c",
