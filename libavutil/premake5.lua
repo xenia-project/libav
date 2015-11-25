@@ -10,7 +10,6 @@ project("libavutil")
     libav_root,
   })
   files({
-    "**/cpu.*",
     "*.c",
     "*.h",
     "x86/*.c",
