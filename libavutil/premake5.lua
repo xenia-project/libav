@@ -34,4 +34,5 @@ project("libavutil")
       "-Wno-error=logical-op-parentheses",
       "-Wno-error=pointer-sign",
       "-Wno-error=parentheses",
+      "-Wno-error=string-plus-int",
     })
